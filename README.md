@@ -74,7 +74,7 @@ A few notes about this command:
 - Each line beginning with a hyphen represents an _option_. In the command above, we've included the main options you will likely need:
   - `-k` specifies the name of your primary key column.
   - `-c` specifies the other columns you want to inspect for differences
-    - To simplify your output, we recommend including only the columns that have altered lines of code in your PR.
+    - To simplify your output and to improve performance, we recommend including only the columns that have altered lines of code in your PR.
     - Alternatively, you can include all columns by writing `-c %`.
     - If you're only investigating whether _entire rows_ are missing (e.g., due to a modification of a `UNION` statement or a `WHERE` clause in your SQL model), we suggest omitting `-c`.
   - `-m` specifies a prefix that will be used to write the results of your `data-diff` run to a Diff Results Table into your warehouse.

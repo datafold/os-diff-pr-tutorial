@@ -74,7 +74,7 @@ A few notes about this command:
 - Each line beginning with a hyphen represents an _option_. In the command above, we've included the main options you will likely need:
   - `-k` specifies the name of your primary key column.
   - `-c` specifies the other columns you want to inspect for differences
-    - To simplify your output, we recommend including only the columns that have altered lines of code in your PR.
+    - To simplify your output and to improve performance, we recommend including only the columns that have altered lines of code in your PR.
     - Alternatively, you can include all columns by writing `-c %`.
     - If you're only investigating whether _entire rows_ are missing (e.g., due to a modification of a `UNION` statement or a `WHERE` clause in your SQL model), we suggest omitting `-c`.
   - `-m` specifies a prefix that will be used to write the results of your `data-diff` run to a table into your warehouse.
@@ -103,12 +103,12 @@ We'll assume you're investigating the primary key, `org_id`, and the `status` co
 | is_diff_org_id | `1` if the value is different between PR and Prod; else `0`. |
 | is_diff_created_at | `1` if the value is different between PR and Prod; else `0`. |
 | is_diff_status | `1` if the value is different between PR and Prod; else `0`. |
-| table1_org_id | PR `org_id`. |
-| table1_created_at |PR `created_at`. |
-| table1_status | PR `status`. |
-| table2_org_id | Prod `org_id`. |
-| table2_created_at | Prod `created_at`. |
-| table2_status |  Prod `status`. |
+| org_id_a | PR `org_id`. |
+| org_id_b | Prod `org_id`. |
+| created_at_a |PR `created_at`. |
+| created_at_b | Prod `created_at`. |
+| status_a | PR `status`. |
+| status_b |  Prod `status`. |
 
 The Test Results Table has both information about whether the values conflict AND the actual values from the columns you've selected from both the PR and Prod schema. This structure gives you a high degree of flexibility to easily investigate row-level value differences and quickly identify the root cause of data conflicts.
 

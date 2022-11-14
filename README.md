@@ -79,12 +79,12 @@ A few notes about this command:
     - If you're only investigating whether _entire rows_ are missing (e.g., due to a modification of a `UNION` statement or a `WHERE` clause in your SQL model), we suggest omitting `-c`.
   - `-m` specifies a prefix that will be used to write the results of your `data-diff` run to a table into your warehouse.
   - `--materialize_all_rows` instructs `data-diff` to write _all_ rows to the warehouse, not only conflicts. This is helpful if you want to query the results and calculate statistics such as the percentage of rows that have a conflicting value in a given column.
-  - `--table-write-limit` limits how many rows are written to the Test Results Table in the warehouse. The limit is 1000 rows by default. Increase this limit for large tables to ensure your results are complete.
+  - `--table-write-limit` limits how many rows are written to the Diff Results Table in the warehouse. The limit is 1000 rows by default. Increase this limit for large tables to ensure your results are complete.
 - There are additional options you can add to your command, which are detailed in the [Options](#command-line-options) section below.
 
 ### Materialize the results in your warehouse.
 
-Once the Test Results Table has been written to the warehouse, you can analyze them using SQL queries. You can also creating visualizations that use your Test Results Table as source data.
+Once the Diff Results Table has been written to the warehouse, you can analyze them using SQL queries. You can also creating visualizations that use your Diff Results Table as source data.
 
 **Wait, I have to write a bunch of SQL? How is this better than what I was doing before?**
 
@@ -92,7 +92,7 @@ It's totally different! With one very simple query, you can immediately learn so
 
 That's powerful, and doesn't compare to the ad hoc SQL and complex joins are required without such a base table.
 
-**Structure of the Test Results Table**
+**Structure of the Diff Results Table**
 
 We'll assume you're investigating the primary key, `org_id`, and the `status` column, because the PR involved edits to the `status` column. We've also included the `created_at` column in our `data-diff` command to support our analysis of the results.
 
@@ -110,18 +110,18 @@ We'll assume you're investigating the primary key, `org_id`, and the `status` co
 | status_a | PR `status`. |
 | status_b |  Prod `status`. |
 
-The Test Results Table has both information about whether the values conflict AND the actual values from the columns you've selected from both the PR and Prod schema. This structure gives you a high degree of flexibility to easily investigate row-level value differences and quickly identify the root cause of data conflicts.
+The Diff Results Table has both information about whether the values conflict AND the actual values from the columns you've selected from both the PR and Prod schema. This structure gives you a high degree of flexibility to easily investigate row-level value differences and quickly identify the root cause of data conflicts.
 
-### Write SQL to analyze Test Results Table and determine whether your PR is good to go.
+### Write SQL to analyze Diff Results Table and determine whether your PR is good to go.
 
-Once you have the Test Results Table in your warehouse, you can write SQL to understand how the tables differ. 
+Once you have the Diff Results Table in your warehouse, you can write SQL to understand how the tables differ. 
 
 Writing SQL to get that high value information is trivial! It's also extensible if you want to write complex analysis and joins. That's the value you get out of using data-diff instead of doing this manually.
 
-Here are some examples of SQL queries that you can use to interpet the Test Results Table.
+Here are some examples of SQL queries that you can use to interpet the Diff Results Table.
 
 **Check for any conflicts between values in PR and Prod.**
-This is an easy way to get started analysing your Test Results Table. If there are no conflicts, you can stop here! 🛑 ✅ 🥳
+This is an easy way to get started analysing your Diff Results Table. If there are no conflicts, you can stop here! 🛑 ✅ 🥳
 
 ```
 select 
@@ -165,35 +165,19 @@ You can easily view which `order_id` values are present in Prod and missing from
 
 ```
 select 
-    "table1_org_id"
+    "org_id_a"
 from <PR_SCHEMA>.<TEST_RESULTS>
-where "table2_org_id" is null;
+where "org_id_b" is null;
 ```
 
-<img width="153" alt="Screen Shot 2022-11-11 at 12 18 10 PM" src="https://user-images.githubusercontent.com/1799931/201425706-1cb73a27-415e-4fb5-aa59-9d3f44c43514.png">
+<img width="116" alt="Screen Shot 2022-11-14 at 2 58 56 PM" src="https://user-images.githubusercontent.com/1799931/201785699-d23ca7dc-a738-467f-a727-35c87fe5c315.png">
 
 
 This is useful if you want to investigate individual rows. You can also pull in other columns in your `select` statement to see what values exist in the rows that have missing primary keys in the PR data.
 
-**Check to see how many `status` values conflict between PR and Prod.**
+**Use the values in your Diff Results Table to pull in values from other tables.**
 
-```
-select 
-    
-from <PR_SCHEMA>.<TEST_RESULTS>
-
-```
-
-And view those values in the context of matching primary keys.
-
-```
-select 
-    
-from <PR_SCHEMA>.<TEST_RESULTS>
-
-```
-
-Around now, you might notice that this table is structured so that you can easily join to the actual Prod table, or any othe table, using the primary key as a join key.
+Around now, you might notice that this table is structured so that you can easily join to the actual Prod table, or any other table, using the primary key as a join key.
 
 ```
 with missing_ids as (
@@ -208,7 +192,7 @@ from <PROD_SCHEMA>.<TABLE_NAME> prod_table
 inner join missing_ids on prod_table.order_id = missing_ids.order_id
 ```
 
-Back to the Test Results Table. Since we've established that you're missing primary keys, you can use the Test Results Table to explore whether the missing rows are evenly distributed across `created_at` values or not.
+Back to the Diff Results Table. Since we've established that you're missing primary keys, you can use the Diff Results Table to explore whether the missing rows are evenly distributed across `created_at` values or not.
 
 ```
 select 
@@ -226,9 +210,11 @@ order by 1 desc, 2 desc;
 
 We see that a much higher percentage of primary keys are missing from the PR data among rows with a `created_at` date from the summer of 2021 as compared to later in 2021.
 
+**Check to see how many `status` values conflict between PR and Prod.**
+
 Now, we want to dig into the `status` column and understand how the values changed.
 
-Instead of relying only on a human reviewer to figure out the impact of the code change, we can use the out-of-the-box Test Results Table that we've materialized in the warehouse to fully understand the value-level differences between PR and Prod data.
+Instead of relying only on a human reviewer to figure out the impact of the code change, we can use the out-of-the-box Diff Results Table that we've materialized in the warehouse to fully understand the value-level differences between PR and Prod data.
 
 ```
 select 
@@ -250,7 +236,7 @@ More specifically, we can see that:
 - 123 rows changed from having string values of "UNDER REVIEW" or "PENDING" in Prod to being `NULL` in the PR.
   - These are the primary keys that are missing from the PR.
 
-By materializing the results of our `data-diff` in the warehouse, we gained insight into data changes on the level of individual values, as well as the ability to quickly summarize the Test Results Table into meaningful conclusions about the impact the PR code will have on the data.
+By materializing the results of our `data-diff` in the warehouse, we gained insight into data changes on the level of individual values, as well as the ability to quickly summarize the Diff Results Table into meaningful conclusions about the impact the PR code will have on the data.
 
 Once we've completed this analysis, we can make any changes needed to the code, run `data-diff` again, and finally, ask for a PR review.
 

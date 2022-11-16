@@ -103,12 +103,12 @@ We'll assume you're investigating the primary key, `org_id`, and the `status` co
 | is_diff_org_id | `1` if the value is different between PR and Prod; else `0`. |
 | is_diff_created_at | `1` if the value is different between PR and Prod; else `0`. |
 | is_diff_status | `1` if the value is different between PR and Prod; else `0`. |
-| table1_org_id | PR `org_id`. |
-| table1_created_at |PR `created_at`. |
-| table1_status | PR `status`. |
-| table2_org_id | Prod `org_id`. |
-| table2_created_at | Prod `created_at`. |
-| table2_status |  Prod `status`. |
+| org_id_a | PR `org_id`. |
+| org_id_b | Prod `org_id`. |
+| created_at_a |PR `created_at`. |
+| created_at_b | Prod `created_at`. |
+| status_a | PR `status`. |
+| status_b |  Prod `status`. |
 
 The Diff Results Table has both information about whether the values conflict AND the actual values from the columns you've selected from both the PR and Prod schema. This structure gives you a high degree of flexibility to easily investigate row-level value differences and quickly identify the root cause of data conflicts.
 
@@ -167,13 +167,12 @@ You can easily view which `order_id` values are present in Prod and missing from
 
 ```
 select 
-    "table1_org_id"
+    "org_id_a"
 from <PR_SCHEMA>.<TEST_RESULTS>
-where "table2_org_id" is null;
+where "org_id_b" is null;
 ```
 
-<img width="153" alt="Screen Shot 2022-11-11 at 12 18 10 PM" src="https://user-images.githubusercontent.com/1799931/201425706-1cb73a27-415e-4fb5-aa59-9d3f44c43514.png">
-
+<img width="73" alt="Screen Shot 2022-11-16 at 10 17 22 AM" src="https://user-images.githubusercontent.com/1799931/202260999-c12f43c4-31fb-4968-9b9d-92ab897a3bbf.png">
 
 This is useful if you want to investigate individual rows. You can also pull in other columns in your `select` statement to see what values exist in the rows that have missing primary keys in the PR data.
 
@@ -184,9 +183,9 @@ Around now, you might notice that this table is structured so that you can easil
 ```
 with missing_ids as (
     select 
-        "table1_org_id"
+        "org_id_a"
     from <PR_SCHEMA>.<TEST_RESULTS>
-    where "table2_org_id" is null;
+    where "org_id_b" is null;
 )
 select 
     *
@@ -200,8 +199,8 @@ Back to the Diff Results Table. Since we've established that you're missing prim
 
 ```
 select 
-  YEAR(to_timestamp("table1_created_at")) as year, 
-  MONTH(to_timestamp("table1_created_at")) as month, 
+  YEAR(to_timestamp("created_at_a")) as year, 
+  MONTH(to_timestamp("created_at_b")) as month, 
   sum(case when "is_exclusive_a" then 1 else 0 end) as "PK in Prod and missing from PR",
   count(*) as "Total PKs in Prod",
   ROUND(100*sum(case when "is_exclusive_a" then 1 else 0 end)/count(*),1) as "% PK in Prod and missing from PR"
@@ -222,8 +221,8 @@ Instead of relying only on a human reviewer to figure out the impact of the code
 
 ```
 select 
-  "table1_status" as "Prod status value",
-  "table2_status" as "PR status value",
+  "status_a" as "Prod status value",
+  "status_b" as "PR status value",
   COUNT(*)
 from <PR_SCHEMA>.<TEST_RESULTS>
 group by 1,2
@@ -270,4 +269,3 @@ When you ask for a PR review, you can say: "Hi, can you please review this PR? I
 | Output | `-m`, `--materialize` | Materialize the diff results into a new table in the database. If a table exists by that name, it will be replaced. Use `%t` in the name to place a timestamp. Example: `-m test_mat_%t` |
 | Output | `--table-write-limit` | Maximum number of rows to write when creating materialized or sample tables, per thread. Default=1000. |
 | Settings | `--no-tracking` | data-diff sends home anonymous usage data. Use this to disable it. |
-

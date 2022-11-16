@@ -270,4 +270,3 @@ When you ask for a PR review, you can say: "Hi, can you please review this PR? I
 | Output | `-m`, `--materialize` | Materialize the diff results into a new table in the database. If a table exists by that name, it will be replaced. Use `%t` in the name to place a timestamp. Example: `-m test_mat_%t` |
 | Output | `--table-write-limit` | Maximum number of rows to write when creating materialized or sample tables, per thread. Default=1000. |
 | Settings | `--no-tracking` | data-diff sends home anonymous usage data. Use this to disable it. |
-

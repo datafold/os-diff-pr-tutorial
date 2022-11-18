@@ -58,8 +58,8 @@ To run `data-diff` from the command line and compare the data in your prod schem
 
 ```
 data-diff \
-  "snowflake://<USER>:<PASSWORD>@<ACCOUNT>/<DATABASE>/<DEV_SCHEMA>?warehouse=<WAREHOUSE>&role=<ROLE>" <TABLE_NAME> \
-  <PROD_SCEMA>.<TABLE_NAME> \
+  "snowflake://<USER>:<PASSWORD>@<ACCOUNT>/<DATABASE>/<PROD_SCEMA>?warehouse=<WAREHOUSE>&role=<ROLE>" <TABLE_NAME> \
+  <DEV_SCHEMA>.<TABLE_NAME> \
   -k <your_primary_key_column>
   -c <altered_column_1> <altered_column_2> <altered_column_3>
   -m test_results_%t \
